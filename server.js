@@ -3,6 +3,7 @@ const cors = require('cors');
 const http = require('http');
 const WebSocket = require('ws');
 
+// Create an Express application
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -21,14 +22,15 @@ let rooms = [];
 // WebSocket server handling client connections
 wss.on('connection', (ws) => {
     console.log('New client connected');
-    ws.send(JSON.stringify({ type: 'serverMessage', content: 'Hello from server!' }));
 
-    // Handle incoming WebSocket messages
     ws.on('message', (message) => {
         console.log('Received: %s', message);
         try {
             const data = JSON.parse(message);
             switch (data.type) {
+                case 'position':
+                    broadcastPosition(data);
+                    break;
                 case 'spawnPlayer':
                     handleSpawnPlayer(data, ws);
                     break;
@@ -40,6 +42,8 @@ wss.on('connection', (ws) => {
             console.error('Error parsing message:', error);
         }
     });
+
+    ws.send(JSON.stringify({ type: 'serverMessage', content: 'Hello from server!' }));
 });
 
 // Function to broadcast player position to all clients
@@ -53,26 +57,16 @@ function broadcastPosition(data) {
 
 // Function to handle spawning a new player
 function handleSpawnPlayer(data, ws) {
-    const { playerId, roomId } = data;
-
+    const playerId = data.playerId; // Assuming player ID is sent with spawn request
     const playerData = {
-        type: 'spawnPlayer',
-        playerId: playerId,
+        type: 'spawnPlayer', // Or another appropriate type
+        playerId: playerId // Send player ID or other necessary data
         // Add additional player data as needed
     };
 
-    // Find the room associated with the player's spawn request
-    const room = rooms.find(r => r.id === roomId);
-
-    if (!room) {
-        console.log(`Room ${roomId} not found.`);
-        return;
-    }
-
-    // Broadcast the spawn message only to clients in the same room
-    room.players.forEach(playerId => {
-        const client = getClientByPlayerId(playerId);
-        if (client && client !== ws && client.readyState === WebSocket.OPEN) {
+    // Broadcast the spawn message to all clients
+    wss.clients.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(playerData));
         }
     });
@@ -158,11 +152,3 @@ function generateUniqueId() {
 server.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
-
-// Helper function to get WebSocket client by player ID
-function getClientByPlayerId(playerId) {
-    return [...wss.clients].find(client => {
-        // Assume each client has a playerId property set when connected
-        return client.playerId === playerId && client.readyState === WebSocket.OPEN;
-    });
-}
