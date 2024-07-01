@@ -57,18 +57,36 @@ function broadcastPosition(data) {
 
 // Function to handle spawning a new player
 function handleSpawnPlayer(data, ws) {
-    const playerId = data.playerId; // Assuming player ID is sent with spawn request
+    const { playerId, roomId } = data;
+
     const playerData = {
-        type: 'spawnPlayer', // Or another appropriate type
-        playerId: playerId // Send player ID or other necessary data
+        type: 'spawnPlayer',
+        playerId: playerId,
         // Add additional player data as needed
     };
 
-    // Broadcast the spawn message to all clients
-    wss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
+    // Find the room associated with the player's spawn request
+    const room = rooms.find(r => r.id === roomId);
+
+    if (!room) {
+        console.log(`Room ${roomId} not found.`);
+        return;
+    }
+
+    // Broadcast the spawn message only to clients in the same room
+    room.players.forEach(playerId => {
+        const client = getClientByPlayerId(playerId);
+        if (client && client !== ws && client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(playerData));
         }
+    });
+}
+
+// Helper function to get WebSocket client by player ID
+function getClientByPlayerId(playerId) {
+    return [...wss.clients].find(client => {
+        // Assume each client has a playerId property set when connected
+        return client.playerId === playerId && client.readyState === WebSocket.OPEN;
     });
 }
 
