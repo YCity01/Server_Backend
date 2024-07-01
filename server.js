@@ -73,7 +73,6 @@ function handleSpawnPlayer(data, ws) {
         if (client !== ws && client.readyState === WebSocket.OPEN && client.roomId === roomId) {
             client.send(JSON.stringify(playerData));
             console.log('Spawning Player: %s', data.playerId);
-
         }
     });
 }
@@ -124,6 +123,20 @@ app.post('/join-room', (req, res) => {
     }
 
     room.players.push(playerId);
+
+    // Broadcast spawnPlayer message to all clients in the room
+    const playerData = {
+        type: 'spawnPlayer',
+        playerId: playerId,
+        roomId: roomId
+        // Additional player data as needed
+    };
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN && client.roomId === roomId) {
+            client.send(JSON.stringify(playerData));
+        }
+    });
+
     res.status(200).json(room);
 });
 
