@@ -27,20 +27,16 @@ wss.on('connection', (ws) => {
         console.log('Received: %s', message);
         try {
             const data = JSON.parse(message);
-            if (data && data.type) {
-                switch (data.type) {
-                    case 'position':
-                        broadcastPosition(data);
-                        break;
-                    case 'spawnPlayer':
-                        handleSpawnPlayer(data, ws);
-                        break;
-                    // Add other message types handling as needed
-                    default:
-                        console.log('Unknown message type:', data.type);
-                }
-            } else {
-                console.log('Invalid message format or type undefined:', message);
+            switch (data.type) {
+                case 'position':
+                    broadcastPosition(data);
+                    break;
+                case 'spawnPlayer':
+                    handleSpawnPlayer(data, ws);
+                    break;
+                // Add other message types handling as needed
+                default:
+                    console.log('Unknown message type:', data.type);
             }
         } catch (error) {
             console.error('Error parsing message:', error);
