@@ -23,21 +23,13 @@ let rooms = [];
 wss.on('connection', (ws) => {
     console.log('New client connected');
 
-    // Store custom data such as roomId and playerId in the WebSocket connection
-    ws.customData = {};
-
     ws.on('message', (message) => {
         console.log('Received: %s', message);
         try {
             const data = JSON.parse(message);
-            // Store roomId and playerId when a player joins a room
-            if (data.type === 'joinRoom') {
-                ws.customData.playerId = data.playerId;
-                ws.customData.roomId = data.roomId;
-            }
             switch (data.type) {
                 case 'position':
-                    broadcastPosition(data);
+                    broadcastPosition(data, data.roomId);
                     break;
                 case 'spawnPlayer':
                     handleSpawnPlayer(data, ws);
@@ -54,43 +46,33 @@ wss.on('connection', (ws) => {
     ws.send(JSON.stringify({ type: 'serverMessage', content: 'Hello from server!' }));
 });
 
-// Function to broadcast player position to all clients
-function broadcastPosition(data) {
-    const room = rooms.find(room => room.id === data.roomId);
-    if (room) {
-        room.players.forEach(playerId => {
-            wss.clients.forEach((client) => {
-                if (client.customData && client.customData.playerId === playerId && client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify(data));
-                }
-            });
-        });
-    }
+// Function to broadcast player position to all clients in the same room
+function broadcastPosition(data, roomId) {
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN && client.roomId === roomId) {
+            client.send(JSON.stringify(data));
+        }
+    });
 }
 
 // Function to handle spawning a new player
 function handleSpawnPlayer(data, ws) {
-    const playerId = data.playerId;
+    const playerId = data.playerId; // Assuming player ID is sent with spawn request
     const roomId = data.roomId;
-
-    const room = rooms.find(room => room.id === roomId);
-    if (!room) {
-        console.error(`Room with id ${roomId} not found`);
-        return;
-    }
+    ws.roomId = roomId; // Save room ID in the WebSocket connection
 
     const playerData = {
-        type: 'spawnPlayer',
-        playerId: playerId,
-        roomId: roomId
+        type: 'spawnPlayer', // Or another appropriate type
+        playerId: playerId, // Send player ID or other necessary data
+        roomId: roomId // Include room ID
+        // Add additional player data as needed
     };
 
-    room.players.forEach(playerId => {
-        wss.clients.forEach((client) => {
-            if (client.customData && client.customData.playerId === playerId && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify(playerData));
-            }
-        });
+    // Broadcast the spawn message to all clients in the same room
+    wss.clients.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN && client.roomId === roomId) {
+            client.send(JSON.stringify(playerData));
+        }
     });
 }
 
