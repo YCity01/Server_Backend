@@ -65,6 +65,7 @@ function handleSpawnPlayer(data, ws) {
         type: 'spawnPlayer', // Or another appropriate type
         playerId: playerId, // Send player ID or other necessary data
         roomId: roomId // Include room ID
+        console.log('Spawning Player: %s', message);
         // Add additional player data as needed
     };
 
