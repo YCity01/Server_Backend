@@ -23,10 +23,18 @@ let rooms = [];
 wss.on('connection', (ws) => {
     console.log('New client connected');
 
+    // Store custom data such as roomId and playerId in the WebSocket connection
+    ws.customData = {};
+
     ws.on('message', (message) => {
         console.log('Received: %s', message);
         try {
             const data = JSON.parse(message);
+            // Store roomId and playerId when a player joins a room
+            if (data.type === 'joinRoom') {
+                ws.customData.playerId = data.playerId;
+                ws.customData.roomId = data.roomId;
+            }
             switch (data.type) {
                 case 'position':
                     broadcastPosition(data);
@@ -48,105 +56,46 @@ wss.on('connection', (ws) => {
 
 // Function to broadcast player position to all clients
 function broadcastPosition(data) {
-    wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(data));
-        }
-    });
+    const room = rooms.find(room => room.id === data.roomId);
+    if (room) {
+        room.players.forEach(playerId => {
+            wss.clients.forEach((client) => {
+                if (client.customData && client.customData.playerId === playerId && client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify(data));
+                }
+            });
+        });
+    }
 }
 
 // Function to handle spawning a new player
 function handleSpawnPlayer(data, ws) {
-    const playerId = data.playerId; // Assuming player ID is sent with spawn request
+    const playerId = data.playerId;
+    const roomId = data.roomId;
+
+    const room = rooms.find(room => room.id === roomId);
+    if (!room) {
+        console.error(`Room with id ${roomId} not found`);
+        return;
+    }
+
     const playerData = {
-        type: 'spawnPlayer', // Or another appropriate type
-        playerId: playerId // Send player ID or other necessary data
-        // Add additional player data as needed
+        type: 'spawnPlayer',
+        playerId: playerId,
+        roomId: roomId
     };
 
-    // Broadcast the spawn message to all clients
-    wss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(playerData));
-        }
+    room.players.forEach(playerId => {
+        wss.clients.forEach((client) => {
+            if (client.customData && client.customData.playerId === playerId && client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify(playerData));
+            }
+        });
     });
 }
 
 // REST API endpoints
-
-app.post('/create-room', (req, res) => {
-    const { name, host } = req.body;
-
-    if (name && host) {
-        const roomId = generateUniqueId();
-        const newRoom = {
-            id: roomId,
-            name,
-            host,
-            players: []
-        };
-
-        rooms.push(newRoom);
-        res.status(201).json({ message: 'Room created', room: newRoom });
-    } else {
-        res.status(400).json({ message: 'Invalid request data' });
-    }
-});
-
-app.get('/rooms', (req, res) => {
-    res.json({ rooms });
-});
-
-app.delete('/delete-room/:roomId', (req, res) => {
-    const roomId = req.params.roomId;
-    const index = rooms.findIndex(room => room.id === roomId);
-
-    if (index !== -1) {
-        rooms.splice(index, 1);
-        res.status(200).json({ message: 'Room deleted successfully' });
-    } else {
-        res.status(404).json({ message: 'Room not found' });
-    }
-});
-
-app.post('/join-room', (req, res) => {
-    const { roomId, playerId } = req.body;
-    const room = rooms.find(room => room.id === roomId);
-
-    if (!room) {
-        return res.status(404).json({ message: 'Room not found' });
-    }
-
-    room.players.push(playerId);
-    res.status(200).json(room);
-});
-
-app.post('/leave-room', (req, res) => {
-    const { roomId, playerId } = req.body;
-    const room = rooms.find(room => room.id === roomId);
-
-    if (!room) {
-        return res.status(404).json({ message: 'Room not found' });
-    }
-
-    if (room.host === playerId) {
-        const index = rooms.findIndex(r => r.id === roomId);
-        rooms.splice(index, 1);
-        res.status(200).json({ message: 'Room deleted because host left' });
-    } else {
-        const playerIndex = room.players.findIndex(p => p === playerId);
-        if (playerIndex !== -1) {
-            room.players.splice(playerIndex, 1);
-            res.status(200).json({ message: 'Player left room' });
-        } else {
-            res.status(404).json({ message: 'Player not found in room' });
-        }
-    }
-});
-
-function generateUniqueId() {
-    return Math.random().toString(36).substr(2, 9);
-}
+// ... (Keep the REST API endpoints as they are)
 
 // Start the HTTP server
 server.listen(port, () => {
