@@ -22,27 +22,6 @@ let rooms = [];
 // WebSocket server handling client connections
 wss.on('connection', (ws) => {
     console.log('New client connected');
-
-    ws.on('message', (message) => {
-        console.log('Received: %s', message);
-        try {
-            const data = JSON.parse(message);
-            switch (data.type) {
-                case 'position':
-                    broadcastPosition(data);
-                    break;
-                case 'spawnPlayer':
-                    handleSpawnPlayer(data, ws);
-                    break;
-                // Add other message types handling as needed
-                default:
-                    console.log('Unknown message type:', data.type);
-            }
-        } catch (error) {
-            console.error('Error parsing message:', error);
-        }
-    });
-
     ws.send(JSON.stringify({ type: 'serverMessage', content: 'Hello from server!' }));
 });
 
@@ -137,6 +116,23 @@ app.post('/join-room', (req, res) => {
 
     room.players.push(playerId);
     res.status(200).json(room);
+
+    ws.on('message', (message) => {
+        console.log('Received: %s', message);
+        try {
+            const data = JSON.parse(message);
+            switch (data.type) {
+                case 'spawnPlayer':
+                    handleSpawnPlayer(data, ws);
+                    break;
+                // Add other message types handling as needed
+                default:
+                    console.log('Unknown message type:', data.type);
+            }
+        } catch (error) {
+            console.error('Error parsing message:', error);
+        }
+   
 });
 
 app.post('/leave-room', (req, res) => {
