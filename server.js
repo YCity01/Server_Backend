@@ -27,16 +27,20 @@ wss.on('connection', (ws) => {
         console.log('Received: %s', message);
         try {
             const data = JSON.parse(message);
-            switch (data.type) {
-                case 'position':
-                    broadcastPosition(data);
-                    break;
-                case 'spawnPlayer':
-                    handleSpawnPlayer(data, ws);
-                    break;
-                // Add other message types handling as needed
-                default:
-                    console.log('Unknown message type:', data.type);
+            if (data && data.type) {
+                switch (data.type) {
+                    case 'position':
+                        broadcastPosition(data);
+                        break;
+                    case 'spawnPlayer':
+                        handleSpawnPlayer(data, ws);
+                        break;
+                    // Add other message types handling as needed
+                    default:
+                        console.log('Unknown message type:', data.type);
+                }
+            } else {
+                console.log('Invalid message format or type undefined:', message);
             }
         } catch (error) {
             console.error('Error parsing message:', error);
@@ -74,6 +78,7 @@ function handleSpawnPlayer(data, ws) {
 
 // REST API endpoints
 
+// Endpoint to create a new room
 app.post('/create-room', (req, res) => {
     const { name, host } = req.body;
 
@@ -93,10 +98,12 @@ app.post('/create-room', (req, res) => {
     }
 });
 
+// Endpoint to retrieve all rooms
 app.get('/rooms', (req, res) => {
     res.json({ rooms });
 });
 
+// Endpoint to delete a room by ID
 app.delete('/delete-room/:roomId', (req, res) => {
     const roomId = req.params.roomId;
     const index = rooms.findIndex(room => room.id === roomId);
@@ -109,6 +116,7 @@ app.delete('/delete-room/:roomId', (req, res) => {
     }
 });
 
+// Endpoint to join a room
 app.post('/join-room', (req, res) => {
     const { roomId, playerId } = req.body;
     const room = rooms.find(room => room.id === roomId);
@@ -121,6 +129,7 @@ app.post('/join-room', (req, res) => {
     res.status(200).json(room);
 });
 
+// Endpoint to leave a room
 app.post('/leave-room', (req, res) => {
     const { roomId, playerId } = req.body;
     const room = rooms.find(room => room.id === roomId);
@@ -144,6 +153,7 @@ app.post('/leave-room', (req, res) => {
     }
 });
 
+// Function to generate a unique room ID
 function generateUniqueId() {
     return Math.random().toString(36).substr(2, 9);
 }
