@@ -43,12 +43,11 @@ wss.on('connection', (ws) => {
         }
     });
 
-    ws.send(JSON.stringify({ type: 'welcome', message: 'Hello from server!' }));
+    ws.send('Hello from server!');
 });
 
 // Function to broadcast player position to all clients
 function broadcastPosition(data) {
-    console.log('Broadcasting position:', data); // Debugging log
     wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(data));
@@ -65,12 +64,10 @@ function handleSpawnPlayer(data, ws) {
         // Add additional player data as needed
     };
 
-    console.log('Spawning new player:', playerData); // Debugging log
-
     // Broadcast the spawn message to all clients
     wss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify(playerData));
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(playerData));
         }
     });
 }
