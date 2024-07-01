@@ -48,6 +48,7 @@ wss.on('connection', (ws) => {
 
 // Function to broadcast player position to all clients
 function broadcastPosition(data) {
+    console.log('Broadcasting position:', data); // Debugging log
     wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(data));
@@ -63,6 +64,8 @@ function handleSpawnPlayer(data, ws) {
         playerId: playerId // Send player ID or other necessary data
         // Add additional player data as needed
     };
+
+    console.log('Spawning new player:', playerData); // Debugging log
 
     // Broadcast the spawn message to all clients
     wss.clients.forEach((client) => {
