@@ -70,7 +70,7 @@ function handleSpawnPlayer(data, ws) {
 
     // Broadcast the spawn message to all clients in the same room
     wss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN && client.playerId === playerId) {
+        if (client !== ws && client.readyState === WebSocket.OPEN && client.roomId === roomId) {
             client.send(JSON.stringify(playerData));
             console.log('Spawning Player: %s', data.playerId);
 
