@@ -43,7 +43,7 @@ wss.on('connection', (ws) => {
         }
     });
 
-    ws.send('Hello from server!');
+    ws.send(JSON.stringify({ type: 'serverMessage', content: 'Hello from server!' }));
 });
 
 // Function to broadcast player position to all clients
@@ -66,7 +66,7 @@ function handleSpawnPlayer(data, ws) {
 
     // Broadcast the spawn message to all clients
     wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(playerData));
         }
     });
