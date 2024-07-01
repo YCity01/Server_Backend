@@ -57,9 +57,6 @@ function broadcastPosition(data) {
 
 // Function to handle spawning a new player
 function handleSpawnPlayer(data, ws) {
-    // Implement logic to spawn player
-    // For example, you can send a message back to the requesting client or broadcast to all clients
-    // Example:
     const playerId = data.playerId; // Assuming player ID is sent with spawn request
     const playerData = {
         type: 'spawnPlayer', // Or another appropriate type
