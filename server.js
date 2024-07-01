@@ -3,7 +3,6 @@ const cors = require('cors');
 const http = require('http');
 const WebSocket = require('ws');
 
-// Create an Express application
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -23,6 +22,24 @@ let rooms = [];
 wss.on('connection', (ws) => {
     console.log('New client connected');
     ws.send(JSON.stringify({ type: 'serverMessage', content: 'Hello from server!' }));
+
+    // Handle incoming WebSocket messages
+    ws.on('message', (message) => {
+        console.log('Received: %s', message);
+        try {
+            const data = JSON.parse(message);
+            switch (data.type) {
+                case 'spawnPlayer':
+                    handleSpawnPlayer(data, ws);
+                    break;
+                // Add other message types handling as needed
+                default:
+                    console.log('Unknown message type:', data.type);
+            }
+        } catch (error) {
+            console.error('Error parsing message:', error);
+        }
+    });
 });
 
 // Function to broadcast player position to all clients
@@ -58,14 +75,6 @@ function handleSpawnPlayer(data, ws) {
         if (client && client !== ws && client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(playerData));
         }
-    });
-}
-
-// Helper function to get WebSocket client by player ID
-function getClientByPlayerId(playerId) {
-    return [...wss.clients].find(client => {
-        // Assume each client has a playerId property set when connected
-        return client.playerId === playerId && client.readyState === WebSocket.OPEN;
     });
 }
 
@@ -116,23 +125,6 @@ app.post('/join-room', (req, res) => {
 
     room.players.push(playerId);
     res.status(200).json(room);
-
-    ws.on('message', (message) => {
-        console.log('Received: %s', message);
-        try {
-            const data = JSON.parse(message);
-            switch (data.type) {
-                case 'spawnPlayer':
-                    handleSpawnPlayer(data, ws);
-                    break;
-                // Add other message types handling as needed
-                default:
-                    console.log('Unknown message type:', data.type);
-            }
-        } catch (error) {
-            console.error('Error parsing message:', error);
-        }
-   
 });
 
 app.post('/leave-room', (req, res) => {
@@ -166,3 +158,11 @@ function generateUniqueId() {
 server.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
+
+// Helper function to get WebSocket client by player ID
+function getClientByPlayerId(playerId) {
+    return [...wss.clients].find(client => {
+        // Assume each client has a playerId property set when connected
+        return client.playerId === playerId && client.readyState === WebSocket.OPEN;
+    });
+}
