@@ -70,7 +70,7 @@ function handleSpawnPlayer(data, ws) {
     // Broadcast the spawn message to all clients
     wss.clients.forEach((client) => {
         if (client !== ws && client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(playerData));
+            ws.send(JSON.stringify(playerData));
         }
     });
 }
