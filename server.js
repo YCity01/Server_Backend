@@ -63,7 +63,7 @@ function handleSpawnPlayer(data, ws) {
 
     const playerData = {
         type: 'spawnPlayer', // Or another appropriate type
-        playerId: <playerId>, // Send player ID or other necessary data
+        playerId: playerId, // Send player ID or other necessary data
         roomId: roomId // Include room ID
         // Add additional player data as needed
     };
