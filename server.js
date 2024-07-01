@@ -68,12 +68,12 @@ function handleSpawnPlayer(data, ws) {
         // Add additional player data as needed
     };
 
-    console.log('Spawning Player: %s', data.playerId);
-
     // Broadcast the spawn message to all clients in the same room
     wss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN && client.roomId === roomId) {
+        if (client !== ws && client.readyState === WebSocket.OPEN && client.playerId === playerId) {
             client.send(JSON.stringify(playerData));
+            console.log('Spawning Player: %s', data.playerId);
+
         }
     });
 }
