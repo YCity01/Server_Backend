@@ -68,7 +68,7 @@ function handleSpawnPlayer(data, ws) {
         // Add additional player data as needed
     };
 
-    console.log('Spawning Player: %s', message);
+    console.log('Spawning Player: %s', data.playerId);
 
     // Broadcast the spawn message to all clients in the same room
     wss.clients.forEach((client) => {
