@@ -31,7 +31,12 @@ wss.on('connection', (ws) => {
                 case 'position':
                     broadcastPosition(data);
                     break;
-                // Handle other message types as needed
+                case 'spawnPlayer':
+                    handleSpawnPlayer(data, ws);
+                    break;
+                // Add other message types handling as needed
+                default:
+                    console.log('Unknown message type:', data.type);
             }
         } catch (error) {
             console.error('Error parsing message:', error);
@@ -46,6 +51,26 @@ function broadcastPosition(data) {
     wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(data));
+        }
+    });
+}
+
+// Function to handle spawning a new player
+function handleSpawnPlayer(data, ws) {
+    // Implement logic to spawn player
+    // For example, you can send a message back to the requesting client or broadcast to all clients
+    // Example:
+    const playerId = data.playerId; // Assuming player ID is sent with spawn request
+    const playerData = {
+        type: 'spawnPlayer', // Or another appropriate type
+        playerId: playerId // Send player ID or other necessary data
+        // Add additional player data as needed
+    };
+
+    // Broadcast the spawn message to all clients
+    wss.clients.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(playerData));
         }
     });
 }
