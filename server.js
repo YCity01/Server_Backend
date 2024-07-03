@@ -9,6 +9,11 @@ app.use(bodyParser.json());
 
 let rooms = [];
 
+// Route to get list of rooms
+app.get('/rooms', (req, res) => {
+  res.json({ rooms: rooms });
+});
+
 // Endpoint to create a new room
 app.post('/create-room', (req, res) => {
   const { name, host } = req.body;
